@@ -267,75 +267,16 @@ namespace StayInTarkov.Coop
         //    }
         //}
 
-        public Dictionary<string, EFT.Player> Bots { get; } = new ();
-
-        private async Task<LocalPlayer> CreatePhysicalBot(Profile profile, Vector3 position)
-        {
-            if (MatchmakerAcceptPatches.IsClient)
-                return null;
-
-            if (Bots != null && Bots.Count(x => x.Value != null && x.Value.PlayerHealthController.IsAlive) >= MaxBotCount)
-            {
-                yield return waitSeconds;
-
-                if (!CoopGameComponent.TryGetCoopGameComponent(out var coopGameComponent))
-                    yield break;
-
-                Dictionary<string, object> timeAndWeatherDict = new()
-                {
-                    { "serverId", coopGameComponent.ServerId },
-                    { "m", "TimeAndWeather" }
-                };
-
-                if (GameDateTime != null)
-                    timeAndWeatherDict.Add("GameDateTime", GameDateTime.Calculate().Ticks);
-
-                var weatherController = WeatherController.Instance;
-                if (weatherController != null)
-                {
-                    if (weatherController.CloudsController != null)
-                        timeAndWeatherDict.Add("CloudDensity", weatherController.CloudsController.Density);
-
-                    var weatherCurve = weatherController.WeatherCurve;
-                    if (weatherCurve != null)
-                    {
-                        timeAndWeatherDict.Add("Fog", weatherCurve.Fog);
-                        timeAndWeatherDict.Add("LightningThunderProbability", weatherCurve.LightningThunderProbability);
-                        timeAndWeatherDict.Add("Rain", weatherCurve.Rain);
-                        timeAndWeatherDict.Add("Temperature", weatherCurve.Temperature);
-                        timeAndWeatherDict.Add("WindDirection.x", weatherCurve.Wind.x);
-                        timeAndWeatherDict.Add("WindDirection.y", weatherCurve.Wind.y);
-                        timeAndWeatherDict.Add("TopWindDirection.x", weatherCurve.TopWind.x);
-                        timeAndWeatherDict.Add("TopWindDirection.y", weatherCurve.TopWind.y);
-                    }
-
-                    string packet = timeAndWeatherDict.ToJson();
-                    Logger.LogDebug(packet);
-                    AkiBackendCommunication.Instance.SendDataToPool(packet);
-                }
-            }
-        }
-
         public Dictionary<string, EFT.Player> Bots { get; set; } = new Dictionary<string, EFT.Player>();
 
         private async Task<LocalPlayer> CreatePhysicalBot(Profile profile, Vector3 position)
         {
             if (MatchmakerAcceptPatches.IsClient)
                 return null;
-            }
+
             Logger.LogDebug($"CreatePhysicalBot: {profile.ProfileId}");
             if (Bots != null && Bots.Count(x => x.Value != null && x.Value.PlayerHealthController.IsAlive) >= MaxBotCount)
                 return null;
-            }
-
-            if (GameDateTime.Calculate().TimeOfDay < new TimeSpan(20, 0, 0) && profile.Info != null && profile.Info.Settings != null
-                && (profile.Info.Settings.Role == WildSpawnType.sectantPriest || profile.Info.Settings.Role == WildSpawnType.sectantWarrior)
-                )
-            {
-                Logger.LogDebug("Block spawn of Sectant (Cultist) in day time!");
-                return null;
-            }
-            Logger.LogDebug($"CreatePhysicalBot: {profile.ProfileId}");
 
             LocalPlayer localPlayer;
             if (!Status.IsRunned())
@@ -557,7 +498,7 @@ namespace StayInTarkov.Coop
                                 }
                                 await Task.Delay(1000);
                             } while (numbersOfPlayersToWaitFor > 0);
-                        } 
+                        }
                     }
                     else if (MatchmakerAcceptPatches.IsClient)
                     {
@@ -715,44 +656,30 @@ namespace StayInTarkov.Coop
                 EBotAmount.Horde => 15,
                 _ => 16,
             };
-            switch(controllerSettings.BotAmount)
-            {
-                case EBotAmount.Low:
-                    MaxBotCount = (int)Math.Floor(MaxBotCount * 0.9);
-                    break;
-                case EBotAmount.High:
-                    MaxBotCount = (int)Math.Floor(MaxBotCount * 1.1);
-                    break;
-                case EBotAmount.Horde:
-                    MaxBotCount = (int)Math.Floor(MaxBotCount * 1.25);
-                    break;
-            };
 
             int numberOfBots = shouldSpawnBots ? MaxBotCount : 0;
-            Logger.LogDebug($"Max Number of Bots: {numberOfBots}");
+            //Logger.LogDebug($"vmethod_4: Number of Bots: {numberOfBots}");
 
             PBotsController.SetSettings(numberOfBots, BackEndSession.BackEndConfig.BotPresets, BackEndSession.BackEndConfig.BotWeaponScatterings);
             PBotsController.AddActivePLayer(PlayerOwner.Player);
 
-            //foreach (var friendlyB in FriendlyPlayers.Values)
+            //foreach(var friendlyB in FriendlyPlayers.Values)
             //{
             //    //BotOwner botOwner = BotOwner.Create(friendlyB, null, this.GameDateTime, this.botsController_0, true);
             //    //botOwner.GetComponentsInChildren<Collider>();
             //    //botOwner.GetPlayer.CharacterController.isEnabled = false;
             //    Logger.LogDebug("Attempting to Activate friendly bot");
-            //    //botCreator.ActivateBot(friendlyB.Profile, botZones[0], false, (bot, zone) =>
-            //    //{
-            //    //    Logger.LogDebug("group action");
-            //    //    return new BotsGroup(zone, this, bot, new List<BotOwner>(), new DeadBodiesController(new BotZoneGroupsDictionary()), this.Bots.Values.ToList(), forBoss: false);
-            //    //}, (owner) =>
-            //    //{
+            //    botCreator.ActivateBot(friendlyB.Profile, friendlyB.Position, botZones[0], false, (bot, zone) => {
+            //        Logger.LogDebug("group action");
+            //        return new BotGroupClass(zone, this, bot, new List<BotOwner>(), new DeadBodiesController(new BotZoneGroupsDictionary()), this.Bots.Values.ToList(), forBoss: false);
+            //    }, (owner) => {
 
-            //    //    Logger.LogDebug("Bot Owner created");
+            //        Logger.LogDebug("Bot Owner created");
 
-            //    //    owner.GetComponentsInChildren<Collider>();
-            //    //    owner.GetPlayer.CharacterController.isEnabled = false;
+            //        owner.GetComponentsInChildren<Collider>();
+            //        owner.GetPlayer.CharacterController.isEnabled = false;
 
-            //    //}, cancellationToken: CancellationToken.None);
+            //    }, cancellationToken: CancellationToken.None);
             //}
 
             yield return new WaitForSeconds(startDelay);
@@ -763,7 +690,7 @@ namespace StayInTarkov.Coop
                 if (nonWavesSpawnScenario_0 != null)
                     nonWavesSpawnScenario_0.Run();
 
-                //Logger.LogDebug($"Running Wave Scenarios");
+                Logger.LogDebug($"Running Wave Scenarios");
 
                 if (wavesSpawnScenario_0.SpawnWaves != null && wavesSpawnScenario_0.SpawnWaves.Length != 0)
                 {
@@ -802,13 +729,6 @@ namespace StayInTarkov.Coop
 
             Singleton<GameWorld>.Instance.gameObject.GetOrAddComponent<SITAirdropsManager>();
 
-            if (shouldSpawnBots)
-            {
-                if (this.nonWavesSpawnScenario_0 != null)
-                    this.nonWavesSpawnScenario_0.Run();
-
-                Logger.LogDebug($"Running Wave Scenarios");
-            }
             yield break;
         }
 
@@ -962,8 +882,6 @@ namespace StayInTarkov.Coop
 
         public override void Stop(string profileId, ExitStatus exitStatus, string exitName, float delay = 0f)
         {
-            //Status = GameStatus.Stopped;
-
             Logger.LogInfo("CoopGame.Stop");
 
             // Notify that I have left the Server
@@ -989,6 +907,7 @@ namespace StayInTarkov.Coop
                 }
             }
 
+            CoopPatches.LeftGameDestroyEverything();
 
             if (BossWaveManager != null)
                 BossWaveManager.Stop();
@@ -999,10 +918,10 @@ namespace StayInTarkov.Coop
             if (wavesSpawnScenario_0 != null)
                 wavesSpawnScenario_0.Stop();
 
-
+            // @konstantin90s suggestion to disable patches as the game closes
             CoopPatches.EnableDisablePatches();
+
             base.Stop(profileId, exitStatus, exitName, delay);
-            CoopPatches.LeftGameDestroyEverything();
         }
 
         public override void CleanUp()

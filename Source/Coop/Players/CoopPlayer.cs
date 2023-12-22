@@ -8,6 +8,7 @@ using EFT.InventoryLogic;
 using LiteNetLib.Utils;
 using StayInTarkov.Coop.ItemControllerPatches;
 using StayInTarkov.Coop.Matchmaker;
+using StayInTarkov.Coop.NetworkPacket;
 using StayInTarkov.Coop.PacketQueues;
 using StayInTarkov.Core.Player;
 using StayInTarkov.Networking;
@@ -309,7 +310,7 @@ namespace StayInTarkov.Coop.Players
 
         public override void SendHeadlightsPacket(bool isSilent)
         {
-            LightsStates[] lightStates = _helmetLightControllers.Select(new Func<TacticalComboVisualController, LightsStates>(ClientPlayer.Class1383.class1383_0.method_0)).ToArray();
+            LightsStates[] lightStates = _helmetLightControllers.Select(new Func<TacticalComboVisualController, LightsStates>(ClientPlayer.Class1384.class1384_0.method_0)).ToArray();
             CommonPlayerPacket.HasHeadLightsPacket = true;
             CommonPlayerPacket.HeadLightsPacket = new()
             {
@@ -332,7 +333,7 @@ namespace StayInTarkov.Coop.Players
             {
                 CommonPlayerPacket.Phrase = @event;
                 CommonPlayerPacket.PhraseIndex = clip.NetId;
-                CommonPlayerPacket.ToggleSend(); 
+                CommonPlayerPacket.ToggleSend();
             }
         }
 
@@ -662,7 +663,7 @@ namespace StayInTarkov.Coop.Players
                 }
             }
 
-            SkipWorld:
+        SkipWorld:
 
             if (packet.HasContainerInteractionPacket)
             {
@@ -1356,7 +1357,7 @@ namespace StayInTarkov.Coop.Players
                 {
                     firearmController.SetTriggerPressed(false);
                 }
-                ActiveHealthController.Kill(packet.ObservedDeathPacket.DamageType);                
+                ActiveHealthController.Kill(packet.ObservedDeathPacket.DamageType);
             }
         }
 
