@@ -20,11 +20,14 @@
 //            return ReflectionHelpers.GetAllMethodsForType(InstanceType).FirstOrDefault(x => x.Name == "Proceed" && x.GetParameters()[0].Name == "withNetwork");
 //        }
 
-//        [PatchPrefix]
-//        public static bool PrePatch(EFT.Player __instance)
-//        {
-//            return CallLocally.Contains(__instance.ProfileId);
-//        }
+        // [PatchPrefix]
+        // public static bool PrePatch(EFT.Player __instance)
+        // {
+        //     // Giving 'false' to the player will cause issue.
+        //     // return CallLocally.Contains(__instance.ProfileId);
+
+        //     return true;
+        // }
 
 //        [PatchPostfix]
 //        public static void PostPatch(EFT.Player __instance, bool withNetwork, bool scheduled)
@@ -39,10 +42,14 @@
 //            AkiBackendCommunication.Instance.SendDataToPool(playerProceedEmptyHandsPacket.Serialize());
 //        }
 
-//        public override void Replicated(EFT.Player player, Dictionary<string, object> dict)
-//        {
-//            if (!dict.ContainsKey("data"))
-//                return;
+        // public override void Replicated(EFT.Player player, Dictionary<string, object> dict)
+        // {
+        //     // The original function is always running, don't let it run again.
+        //     if (player.IsYourPlayer)
+        //         return;
+
+        //     if (!dict.ContainsKey("data"))
+        //         return;
 
 //            PlayerProceedEmptyHandsPacket playerProceedEmptyHandsPacket = new(null, true, true, null);
 //            playerProceedEmptyHandsPacket = playerProceedEmptyHandsPacket.DeserializePacketSIT(dict["data"].ToString());

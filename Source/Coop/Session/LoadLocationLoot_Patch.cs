@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace StayInTarkov.Coop.Session
 {
-    public class LocationDataRequest()
+    public class LocationDataRequest
     {
         [JsonProperty("data")]
         public LocationSettings.Location Data { get; set; }

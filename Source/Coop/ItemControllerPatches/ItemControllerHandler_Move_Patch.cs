@@ -66,21 +66,26 @@
 //                return;
 //            }
 
-//            if (to is SlotItemAddress slotItemAddress)
-//            {
-//                SlotItemAddressDescriptor slotItemAddressDescriptor = new();
-//                slotItemAddressDescriptor.Container = new();
-//                slotItemAddressDescriptor.Container.ContainerId = to.Container.ID;
-//                slotItemAddressDescriptor.Container.ParentId = to.Container.ParentItem != null ? to.Container.ParentItem.Id : null;
-//                player.InventoryPacket.HasItemMovementHandlerMovePacket = true;
-//                player.InventoryPacket.ItemMovementHandlerMovePacket = new()
-//                {
-//                    ItemId = item.Id,
-//                    Descriptor = slotItemAddressDescriptor
-//                };
-//                player.InventoryPacket.ToggleSend();
-//                return;
-//            }
+            // if (to is SlotItemAddress slotItemAddress)
+            // {
+            //     SlotItemAddressDescriptor slotItemAddressDescriptor = new();
+            //     slotItemAddressDescriptor.Container = new();
+            //     slotItemAddressDescriptor.Container.ContainerId = to.Container.ID;
+            //     slotItemAddressDescriptor.Container.ParentId = to.Container.ParentItem != null ? to.Container.ParentItem.Id : null;
+            //     dictionary.Add("sitad", slotItemAddressDescriptor);
+
+            //     if (to.Container.ParentItem != null)
+            //     {
+            //         IItemOwner owner = to.Container.ParentItem.Owner;
+            //         if (owner != null)
+            //         {
+            //             if (owner is ItemController itemControllerOwner && itemControllerOwner.ID.StartsWith("pmc"))
+            //             {
+            //                 dictionary.Add("ply", itemControllerOwner.ID);
+            //             }
+            //         }
+            //     }
+            // }
 
 //            if (to is StackSlotItemAddress stackSlotItemAddress)
 //            {
@@ -154,7 +159,9 @@
 //                    GetLogger().LogInfo(packet["sitad"].ToString());
 //                    descriptor = packet["sitad"].ToString().SITParseJson<SlotItemAddressDescriptor>();
 
-//                }
+                //     if (packet.ContainsKey("ply"))
+                //         ItemFinder.TryFindItemController(packet["ply"].ToString(), out itemController);
+                // }
 
 //                if (packet.ContainsKey("ssad"))
 //                {
@@ -170,14 +177,10 @@
 //                    return;
 //                }
 
-//                if (!ItemFinder.TryFindItemController(descriptor.Container.ParentId, out itemController))
-//                {
-//                    if (!ItemFinder.TryFindItemController(itemControllerId, out itemController))
-//                    {
-//                        GetLogger().LogError("Unable to find ItemController");
-//                        return;
-//                    }
-//                }
+                // if (itemController == null)
+                //     if (!ItemFinder.TryFindItemController(descriptor.Container.ParentId, out itemController))
+                //         if (!ItemFinder.TryFindItemController(itemControllerId, out itemController))
+                //             ItemFinder.TryFindItemController(Singleton<GameWorld>.Instance.MainPlayer.ProfileId, out itemController);
 
 //                if (itemController == null)
 //                {
