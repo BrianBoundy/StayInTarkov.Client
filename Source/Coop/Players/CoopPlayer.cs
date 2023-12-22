@@ -8,7 +8,6 @@ using EFT.InventoryLogic;
 using LiteNetLib.Utils;
 using StayInTarkov.Coop.ItemControllerPatches;
 using StayInTarkov.Coop.Matchmaker;
-using StayInTarkov.Coop.NetworkPacket;
 using StayInTarkov.Coop.PacketQueues;
 using StayInTarkov.Core.Player;
 using StayInTarkov.Networking;
