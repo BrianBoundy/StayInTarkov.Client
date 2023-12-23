@@ -333,7 +333,7 @@ namespace StayInTarkov.Coop
                 }
 
 
-            }
+            }            
             return localPlayer;
         }
 

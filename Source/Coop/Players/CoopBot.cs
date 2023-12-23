@@ -110,7 +110,7 @@ namespace StayInTarkov.Coop
             // TODO: Do this on ApplyShot instead, and check if instigator is local
             // Also do check if it's a server and shooter is AI
 
-            if (damageInfo.Player != null && damageInfo.Player is ObservedCoopPlayer)
+            if (damageInfo.Player != null && damageInfo.Player.iPlayer is ObservedCoopPlayer)
                 return;
 
             HealthPacket.HasDamageInfo = true;
@@ -119,22 +119,14 @@ namespace StayInTarkov.Coop
                 Damage = damageInfo.Damage,
                 DamageType = damageInfo.DamageType,
                 BodyPartType = bodyPartType,
-                Absorbed = absorbed
+                Absorbed = absorbed,
+                //ProfileId = damageInfo.Player == null ? "null" : damageInfo.Player.iPlayer.ProfileId
             };
             HealthPacket.ToggleSend();
 
             base.ApplyDamageInfo(damageInfo, bodyPartType, absorbed, headSegment);
         }
 
-        public override PlayerHitInfo ApplyShot(DamageInfo damageInfo, EBodyPart bodyPartType, ShotId shotId)
-        {
-            return base.ApplyShot(damageInfo, bodyPartType, shotId);
-        }
-
-        public override void OnItemAddedOrRemoved(Item item, ItemAddress location, bool added)
-        {
-            base.OnItemAddedOrRemoved(item, location, added);
-        }
         protected override IEnumerator SendStatePacket()
         {
             // TODO: Improve this by not resetting the writer and send many packets instead, rewrite the function in the client/server.

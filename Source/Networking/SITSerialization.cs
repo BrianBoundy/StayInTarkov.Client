@@ -683,12 +683,13 @@ namespace StayInTarkov.Networking
             }
         }
 
-        public struct ApplyDamageInfoPacket
+        public struct ApplyDamageInfoPacket()
         {
             public EDamageType DamageType { get; set; }
             public float Damage { get; set; }
             public EBodyPart BodyPartType { get; set; }
             public float Absorbed { get; set; }
+            public string ProfileId { get; set; } = "null";
 
             public static ApplyDamageInfoPacket Deserialize(NetDataReader reader)
             {
@@ -697,6 +698,7 @@ namespace StayInTarkov.Networking
                 packet.Damage = reader.GetFloat();
                 packet.BodyPartType = (EBodyPart)reader.GetInt();
                 packet.Absorbed = reader.GetFloat();
+                packet.ProfileId = reader.GetString();
                 return packet;
             }
             public static void Serialize(NetDataWriter writer, ApplyDamageInfoPacket packet)
@@ -705,6 +707,7 @@ namespace StayInTarkov.Networking
                 writer.Put(packet.Damage);
                 writer.Put((int)packet.BodyPartType);
                 writer.Put(packet.Absorbed);
+                writer.Put(packet.ProfileId);
             }
         }
 
@@ -746,20 +749,23 @@ namespace StayInTarkov.Networking
             }
         }
 
-        public struct ObservedDeathPacket
+        public struct ObservedDeathPacket()
         {
             public EDamageType DamageType { get; set; }
+            public string ProfileId { get; set; } = "null";
 
             public static ObservedDeathPacket Deserialize(NetDataReader reader)
             {
                 return new ObservedDeathPacket() 
                 {
-                    DamageType = (EDamageType)reader.GetInt()
+                    DamageType = (EDamageType)reader.GetInt(),
+                    ProfileId = reader.GetString()
                 };
             }
             public static void Serialize(NetDataWriter writer, ObservedDeathPacket packet)
             {
                 writer.Put((int)packet.DamageType);
+                writer.Put(packet.ProfileId);
             }
         }
 

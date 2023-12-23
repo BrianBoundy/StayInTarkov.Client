@@ -12,29 +12,10 @@ namespace StayInTarkov.Coop
 
         }
 
-        public override bool ApplyItem(Item item, EBodyPart bodyPart, float? amount = null)
-        {
-            return base.ApplyItem(item, bodyPart, amount);
-        }
-
-        protected override void AddEffectToList(AbstractEffect effect)
-        {
-            base.AddEffectToList(effect);
-        }
-
-        public override void SetEncumbered(bool encumbered)
-        {
-            base.SetEncumbered(encumbered);
-        }
-
-        public override void SetOverEncumbered(bool encumbered)
-        {
-            base.SetOverEncumbered(encumbered);
-        }
-
         public void AddNetworkEffect(string type, EBodyPart bodyPart, float? delayTime = null, float? workTime = null, float? residueTime = null, float? strength = null)
         {
-            // TODO: Oneliner by getting the type string as a class/type
+            // TODO: Oneliner by getting the type string as a class
+            // TODO: Check AbstractHealth::HandleSyncPacket
 
             switch (type)
             {
@@ -128,9 +109,9 @@ namespace StayInTarkov.Coop
                 case "Wound":
                     AddEffect<Wound>(bodyPart, delayTime, workTime, residueTime, strength);
                     break;
-                //case "MedEffect":
-                //    AddEffect<MedEffect>(bodyPart, delayTime, workTime, residueTime, strength);
-                //    break;
+                case "MedEffect":
+                    AddEffect<MedEffect>(bodyPart, delayTime, workTime, residueTime, strength);
+                    break;
             }
         }
     }

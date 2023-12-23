@@ -1,5 +1,4 @@
-﻿using Aki.Custom.Airdrops;
-using Comfort.Common;
+﻿using Comfort.Common;
 using EFT;
 using EFT.Weather;
 using LiteNetLib;
@@ -8,7 +7,6 @@ using StayInTarkov.Configuration;
 using StayInTarkov.Coop;
 using StayInTarkov.Coop.Players;
 using StayInTarkov.Networking.Packets;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -84,7 +82,6 @@ namespace StayInTarkov.Networking
             _dataWriter.Reset();
             SendDataToPeer(peer, _dataWriter, ref respondPackage, DeliveryMethod.ReliableUnordered);
         }
-
         private void OnAllCharacterRequestPacketReceived(AllCharacterRequestPacket packet, NetPeer peer)
         {
             // This method needs to be refined. For some reason the ping-pong has to be run twice for it to work on the host?
@@ -109,7 +106,7 @@ namespace StayInTarkov.Networking
                         Position = player.Transform.position
                     };
                     _dataWriter.Reset();
-                    SendDataToPeer(peer, _dataWriter, ref requestPacket, DeliveryMethod.ReliableOrdered);
+                    SendDataToPeer(peer, _dataWriter, ref requestPacket, DeliveryMethod.ReliableUnordered);
                 }
             }
             if (!Players.ContainsKey(packet.ProfileId) && !PlayersMissing.Contains(packet.ProfileId))
@@ -118,7 +115,7 @@ namespace StayInTarkov.Networking
                 EFT.UI.ConsoleScreen.Log($"Requesting missing player from server.");
                 AllCharacterRequestPacket requestPacket = new(MyPlayer.ProfileId);
                 _dataWriter.Reset();
-                SendDataToPeer(peer, _dataWriter, ref requestPacket, DeliveryMethod.ReliableOrdered);
+                SendDataToPeer(peer, _dataWriter, ref requestPacket, DeliveryMethod.ReliableUnordered);
             }
             if (!packet.IsRequest && PlayersMissing.Contains(packet.ProfileId))
             {
@@ -130,7 +127,7 @@ namespace StayInTarkov.Networking
                     if (!CoopGameComponent.PlayersToSpawnProfiles.ContainsKey(packet.PlayerInfo.Profile.ProfileId))
                         CoopGameComponent.PlayersToSpawnProfiles.Add(packet.PlayerInfo.Profile.ProfileId, packet.PlayerInfo.Profile);
 
-                    CoopGameComponent.TestCreateObserved(packet.PlayerInfo.Profile, new Vector3(packet.Position.x, packet.Position.y + 0.5f, packet.Position.y), packet.IsAlive);
+                    CoopGameComponent.QueueProfile(packet.PlayerInfo.Profile, new Vector3(packet.Position.x, packet.Position.y + 0.5f, packet.Position.y), packet.IsAlive);
                     PlayersMissing.Remove(packet.ProfileId);
                 }
             }
@@ -163,7 +160,6 @@ namespace StayInTarkov.Networking
                 playerToApply.InventoryPackets.Enqueue(packet);
             }
         }
-
         private void OnHealthPacketReceived(HealthPacket packet, NetPeer peer)
         {
             if (!Players.ContainsKey(packet.ProfileId))
@@ -178,7 +174,6 @@ namespace StayInTarkov.Networking
                 playerToApply.HealthPackets.Enqueue(packet);
             }
         }
-
         private void OnWeaponPacketReceived(WeaponPacket packet, NetPeer peer)
         {
             if (!Players.ContainsKey(packet.ProfileId))
@@ -193,7 +188,6 @@ namespace StayInTarkov.Networking
                 playerToApply.FirearmPackets.Enqueue(packet);
             }
         }
-
         private void OnWeatherPacketReceived(WeatherPacket packet, NetPeer peer)
         {
             if (!packet.IsRequest)
@@ -223,7 +217,6 @@ namespace StayInTarkov.Networking
                 SendDataToPeer(peer, _dataWriter, ref weatherPacket, DeliveryMethod.ReliableOrdered);
             }
         }
-
         private void OnGameTimerPacketReceived(GameTimerPacket packet, NetPeer peer)
         {
             if (!packet.IsRequest)
@@ -241,7 +234,6 @@ namespace StayInTarkov.Networking
                 EFT.UI.ConsoleScreen.Log("OnGameTimerPacketReceived: Game was null!");
             }
         }
-
         private void OnPlayerStatePacketReceived(PlayerStatePacket packet, NetPeer peer)
         {
             if (!Players.ContainsKey(packet.ProfileId))
