@@ -771,7 +771,7 @@ namespace StayInTarkov.Coop
 
             if (!spawnObject.IsAlive)
             {
-                //Create corpse instead
+                //Create corpse instead?
                 otherPlayer.ActiveHealthController.Kill(EDamageType.Undefined);
             }
 
