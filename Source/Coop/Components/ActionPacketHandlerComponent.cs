@@ -2,8 +2,10 @@
 using Comfort.Common;
 using EFT;
 using EFT.UI.BattleTimer;
+using StayInTarkov.Coop.Matchmaker;
 using StayInTarkov.Coop.Players;
 using StayInTarkov.Core.Player;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,6 +13,10 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using UnityEngine;
+using Aki.Custom.Airdrops;
+using Aki.Custom.Airdrops.Models;
+using StayInTarkov.AkiSupport.Airdrops.Models;
+
 
 namespace StayInTarkov.Coop.Components
 {
