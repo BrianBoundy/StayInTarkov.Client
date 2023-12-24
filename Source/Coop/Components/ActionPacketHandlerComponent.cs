@@ -1,11 +1,15 @@
 ﻿using BepInEx.Logging;
 using Comfort.Common;
 using EFT;
+using EFT.UI.BattleTimer;
 using StayInTarkov.Coop.Players;
 using StayInTarkov.Core.Player;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace StayInTarkov.Coop.Components
@@ -255,6 +259,195 @@ namespace StayInTarkov.Coop.Components
 
             prc.ProcessPacket(packet);
             return true;
+        }
+
+        async Task WaitForPlayerAndProcessPacket(string profileId, Dictionary<string, object> packet)
+        {
+            // Start the timer.
+            var startTime = DateTime.Now;
+            var maxWaitTime = TimeSpan.FromMinutes(2);
+
+            while (true)
+            {
+                // Check if maximum wait time has been reached.
+                if (DateTime.Now - startTime > maxWaitTime)
+                {
+                    Logger.LogError($"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff")}: WaitForPlayerAndProcessPacket waited for {maxWaitTime.TotalMinutes} minutes, but player {profileId} still did not exist after timeout period.");
+                    return;
+                }
+
+                if (Players == null)
+                    continue;
+
+                var registeredPlayers = Singleton<GameWorld>.Instance.RegisteredPlayers;
+
+                // If the player now exists, process the packet and end the thread.
+                if (Players.Any(x => x.Key == profileId) || registeredPlayers.Any(x => x.Profile.ProfileId == profileId))
+                {
+                    // Logger.LogDebug($"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff")}: WaitForPlayerAndProcessPacket waited for {(DateTime.Now - startTime).TotalSeconds}s");
+                    ProcessPlayerPacket(packet);
+                    return;
+                }
+
+                // Wait for a short period before checking again.
+                await Task.Delay(1000);
+            }
+        }
+
+        void ReplicateAirdrop(Dictionary<string, object> packet)
+        {
+            if (!Singleton<SITAirdropsManager>.Instantiated)
+                return;
+
+            Logger.LogInfo("--- RAW AIRDROP PACKET ---");
+            Logger.LogInfo(packet.SITToJson());
+
+            Singleton<SITAirdropsManager>.Instance.AirdropParameters = packet["model"].ToString().SITParseJson<AirdropParametersModel>();
+        }
+
+        void ReplicateAirdropLoot(Dictionary<string, object> packet)
+        {
+            if (!Singleton<SITAirdropsManager>.Instantiated)
+                return;
+
+            Logger.LogInfo("--- RAW AIRDROP-LOOT PACKET ---");
+            Logger.LogInfo(packet.SITToJson());
+
+            Singleton<SITAirdropsManager>.Instance.ReceiveBuildLootContainer(
+                packet["result"].ToString().SITParseJson<AirdropLootResultModel>(),
+                packet["config"].ToString().SITParseJson<AirdropConfigModel>());
+        }
+
+        void ReplicateRaidTimer(Dictionary<string, object> packet)
+        {
+            CoopGameComponent coopGameComponent = CoopGameComponent.GetCoopGameComponent();
+            if (coopGameComponent == null)
+                return;
+
+            if (MatchmakerAcceptPatches.IsClient)
+            {
+                var sessionTime = new TimeSpan(long.Parse(packet["sessionTime"].ToString()));
+                Logger.LogInfo($"RaidTimer: Remaining session time {sessionTime.TraderFormat()}");
+
+                if (coopGameComponent.LocalGameInstance is CoopGame coopGame)
+                {
+                    var gameTimer = coopGame.GameTimer;
+                    if (gameTimer.StartDateTime.HasValue && gameTimer.SessionTime.HasValue)
+                    {
+                        if (gameTimer.PastTime.TotalSeconds < 3)
+                            return;
+
+                        var timeRemain = gameTimer.PastTime + sessionTime;
+
+                        if (Math.Abs(gameTimer.SessionTime.Value.TotalSeconds - timeRemain.TotalSeconds) < 5)
+                            return;
+
+                        Logger.LogInfo($"RaidTimer: New SessionTime {timeRemain.TraderFormat()}");
+                        gameTimer.ChangeSessionTime(timeRemain);
+
+                        // FIXME: Giving SetTime() with empty exfil point arrays has a known bug that may cause client game crashes!
+                        coopGame.GameUi.TimerPanel.SetTime(gameTimer.StartDateTime.Value, coopGame.Profile_0.Info.Side, gameTimer.SessionSeconds(), new EFT.Interactive.ExfiltrationPoint[] { });
+                    }
+                }
+            }
+        }
+
+        void ReplicateTimeAndWeather(Dictionary<string, object> packet)
+        {
+            CoopGameComponent coopGameComponent = CoopGameComponent.GetCoopGameComponent();
+            if (coopGameComponent == null)
+                return;
+
+            if (MatchmakerAcceptPatches.IsClient)
+            {
+                Logger.LogDebug(packet.ToJson());
+
+                var gameDateTime = new DateTime(long.Parse(packet["GameDateTime"].ToString()));
+                if (coopGameComponent.LocalGameInstance is CoopGame coopGame && coopGame.GameDateTime != null)
+                    coopGame.GameDateTime.Reset(gameDateTime);
+
+                var weatherController = EFT.Weather.WeatherController.Instance;
+                if (weatherController != null)
+                {
+                    var weatherDebug = weatherController.WeatherDebug;
+                    if (weatherDebug != null)
+                    {
+                        weatherDebug.Enabled = true;
+
+                        weatherDebug.CloudDensity = float.Parse(packet["CloudDensity"].ToString());
+                        weatherDebug.Fog = float.Parse(packet["Fog"].ToString());
+                        weatherDebug.LightningThunderProbability = float.Parse(packet["LightningThunderProbability"].ToString());
+                        weatherDebug.Rain = float.Parse(packet["Rain"].ToString());
+                        weatherDebug.Temperature = float.Parse(packet["Temperature"].ToString());
+                        weatherDebug.TopWindDirection = new(float.Parse(packet["TopWindDirection.x"].ToString()), float.Parse(packet["TopWindDirection.y"].ToString()));
+
+                        Vector2 windDirection = new(float.Parse(packet["WindDirection.x"].ToString()), float.Parse(packet["WindDirection.y"].ToString()));
+
+                        // working dog sh*t, if you are the programmer, DON'T EVER DO THIS! - dounai2333
+                        static bool BothPositive(float f1, float f2) => f1 > 0 && f2 > 0;
+                        static bool BothNegative(float f1, float f2) => f1 < 0 && f2 < 0;
+                        static bool VectorIsSameQuadrant(Vector2 v1, Vector2 v2, out int flag)
+                        {
+                            flag = 0;
+                            if (v1.x != 0 && v1.y != 0 && v2.x != 0 && v2.y != 0)
+                            {
+                                if ((BothPositive(v1.x, v2.x) && BothPositive(v1.y, v2.y))
+                                || (BothNegative(v1.x, v2.x) && BothNegative(v1.y, v2.y))
+                                || (BothPositive(v1.x, v2.x) && BothNegative(v1.y, v2.y))
+                                || (BothNegative(v1.x, v2.x) && BothPositive(v1.y, v2.y)))
+                                {
+                                    flag = 1;
+                                    return true;
+                                }
+                            }
+                            else
+                            {
+                                if (v1.x != 0 && v2.x != 0)
+                                {
+                                    if (BothPositive(v1.x, v2.x) || BothNegative(v1.x, v2.x))
+                                    {
+                                        flag = 1;
+                                        return true;
+                                    }
+                                }
+                                else if (v1.y != 0 && v2.y != 0)
+                                {
+                                    if (BothPositive(v1.y, v2.y) || BothNegative(v1.y, v2.y))
+                                    {
+                                        flag = 2;
+                                        return true;
+                                    }
+                                }
+                            }
+                            return false;
+                        }
+
+                        for (int i = 1; i < WeatherClass.WindDirections.Count(); i++)
+                        {
+                            Vector2 direction = WeatherClass.WindDirections[i];
+                            if (VectorIsSameQuadrant(windDirection, direction, out int flag))
+                            {
+                                weatherDebug.WindDirection = (EFT.Weather.WeatherDebug.Direction)i;
+                                weatherDebug.WindMagnitude = flag switch
+                                {
+                                    1 => windDirection.x / direction.x,
+                                    2 => windDirection.y / direction.y,
+                                    _ => weatherDebug.WindMagnitude
+                                };
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Logger.LogError("TimeAndWeather: WeatherDebug is null!");
+                    }
+                }
+                else
+                {
+                    Logger.LogError("TimeAndWeather: WeatherController is null!");
+                }
+            }
         }
     }
 }
