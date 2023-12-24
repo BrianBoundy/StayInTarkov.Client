@@ -109,9 +109,9 @@ namespace StayInTarkov.Coop
                 case "Wound":
                     AddEffect<Wound>(bodyPart, delayTime, workTime, residueTime, strength);
                     break;
-                case "MedEffect":
-                    AddEffect<MedEffect>(bodyPart, delayTime, workTime, residueTime, strength);
-                    break;
+                //case "MedEffect":
+                //    AddEffect<MedEffect>(bodyPart, delayTime, workTime, residueTime, strength);  //NIMBUL
+                //    break;
             }
         }
     }
