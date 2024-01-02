@@ -6,6 +6,7 @@ using EFT.Bots;
 using EFT.Game.Spawning;
 using EFT.InputSystem;
 using EFT.Interactive;
+using EFT.MovingPlatforms;
 using EFT.UI;
 using EFT.Weather;
 using JsonType;
@@ -21,6 +22,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using UnityEngine;
 
