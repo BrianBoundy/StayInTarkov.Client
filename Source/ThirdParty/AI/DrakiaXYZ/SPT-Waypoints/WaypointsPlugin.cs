@@ -31,7 +31,7 @@ namespace DrakiaXYZ.Waypoints
                 CustomWaypointLoader.Instance.loadData();
 
                 new DebugPatch().Enable();
-                //new WaypointPatch().Enable();
+                new WaypointPatch().Enable();
                 //new BotOwnerRunPatch().Enable();
 
                 new EditorPatch().Enable();
