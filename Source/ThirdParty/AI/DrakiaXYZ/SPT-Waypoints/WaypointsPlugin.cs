@@ -32,10 +32,8 @@ namespace DrakiaXYZ.Waypoints
 
                 new DebugPatch().Enable();
                 new WaypointPatch().Enable();
-                //new BotOwnerRunPatch().Enable();
-
+                new BotOwnerRunPatch().Enable();
                 new EditorPatch().Enable();
-
                 new DoorBlockerPatch().Enable();
             }
             catch (Exception ex)
