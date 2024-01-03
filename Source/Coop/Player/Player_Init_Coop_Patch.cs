@@ -3,6 +3,7 @@ using Comfort.Common;
 using EFT;
 using StayInTarkov.Configuration;
 using StayInTarkov.Coop.Matchmaker;
+using StayInTarkov.Coop.Players;
 using StayInTarkov.Coop.Web;
 using StayInTarkov.Core.Player;
 using StayInTarkov.UI;
@@ -50,7 +51,7 @@ namespace StayInTarkov.Coop.Player
             if (Singleton<GameWorld>.Instance != null)
             {
                 if (!coopGC.Players.ContainsKey(profileId))
-                    coopGC.Players.TryAdd(profileId, (CoopPlayer)player);
+                    coopGC.Players.TryAdd(profileId, player as CoopPlayer);
 
                 if (!Singleton<GameWorld>.Instance.RegisteredPlayers.Any(x => x.ProfileId == profileId))
                     Singleton<GameWorld>.Instance.RegisterPlayer(player);
@@ -79,7 +80,7 @@ namespace StayInTarkov.Coop.Player
                 PluginConfigSettings.Instance.CoopSettings.SETTING_ShowFeed
                 && (__instance.ProfileId.StartsWith("pmc") || __instance.ProfileId.StartsWith("scav"))
                 )
-                DisplayMessageNotifications.DisplayMessageNotification($"{__instance.Profile.Nickname}[{__instance.Side}][{__instance.Profile.Info.Settings.Role}] has spawned");
+                NotificationManagerClass.DisplayMessageNotification($"{__instance.Profile.Nickname}[{__instance.Side}][{__instance.Profile.Info.Settings.Role}] has spawned");
 
         }
 

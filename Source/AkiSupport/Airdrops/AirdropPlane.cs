@@ -22,15 +22,25 @@ namespace StayInTarkov.AkiSupport.Airdrops
         private float flaresCooldown;
         private bool flaresDeployed;
         private bool headingChanged;
+        public Vector3 newPosition;
+        public Vector3 newRotation;
 
-        public static async Task<AirdropPlane> Init(Vector3 airdropPoint, int dropHeight, float planeVolume, float speed)
+        public static async Task<AirdropPlane> Init(Vector3 airdropPoint, int dropHeight, float planeVolume, float speed, bool isClient = false, Vector3 lookPoint = new Vector3())
         {
             var instance = (await LoadPlane()).AddComponent<AirdropPlane>();
 
             instance.airplaneSync = instance.GetComponent<AirplaneSynchronizableObject>();
             instance.airplaneSync.SetLogic(new AirplaneLogicClass());
 
-            instance.SetPosition(dropHeight, airdropPoint);
+            if (!isClient)
+            {
+                instance.SetPosition(dropHeight, airdropPoint); 
+            }
+            else
+            {
+                instance.SetPositionClient(airdropPoint, lookPoint);
+            }
+
             instance.SetAudio(planeVolume);
             instance.speed = speed;
             instance.gameObject.SetActive(false);
@@ -71,7 +81,16 @@ namespace StayInTarkov.AkiSupport.Airdrops
             var pointOnCircle = Random.insideUnitCircle.normalized * RADIUS_TO_PICK_RANDOM_POINT;
 
             transform.position = new Vector3(pointOnCircle.x, dropHeight, pointOnCircle.y);
-            transform.LookAt(new Vector3(airdropPoint.x, dropHeight, airdropPoint.z));
+            newPosition = transform.position;
+            Vector3 lookPoint = new Vector3(airdropPoint.x, dropHeight, airdropPoint.z);
+            transform.LookAt(lookPoint);
+            newRotation = lookPoint;
+        }
+
+        private void SetPositionClient(Vector3 position, Vector3 lookPoint)
+        {
+            transform.position = position;
+            transform.LookAt(lookPoint);
         }
 
         public void ManualUpdate(float distance)

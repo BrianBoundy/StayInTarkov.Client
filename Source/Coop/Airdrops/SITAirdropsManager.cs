@@ -4,21 +4,16 @@ using BepInEx.Logging;
 using Comfort.Common;
 using DrakiaXYZ.BigBrain.Brains;
 using EFT;
-using StayInTarkov;
-using StayInTarkov.AI.PMCLogic.Roaming;
 using StayInTarkov.AI.PMCLogic.RushAirdrop;
 using StayInTarkov.AkiSupport.Airdrops;
 using StayInTarkov.AkiSupport.Airdrops.Models;
 using StayInTarkov.AkiSupport.Airdrops.Utils;
-using StayInTarkov.Coop;
 using StayInTarkov.Coop.Matchmaker;
-using StayInTarkov.Coop.NetworkPacket;
-using StayInTarkov.Coop.Web;
-using StayInTarkov.Networking;
+using StayInTarkov.Coop.Players;
+using StayInTarkov.Networking.Packets;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using static GClass1657;
 
 namespace Aki.Custom.Airdrops
 {
@@ -99,26 +94,41 @@ namespace Aki.Custom.Airdrops
 
             BuildLootContainer(AirdropParameters.Config);
 
-            StartCoroutine(SendParamsToClients());
+            //StartCoroutine(SendParamsToClients());
 
-            BrainManager.AddCustomLayer(typeof(RushAirdropLayer), new List<string>() { "Assault", "PMC", "sptUsec" }, 2);
+            BrainManager.AddCustomLayer(typeof(RushAirdropLayer), ["Assault", "PMC", "sptUsec"], 2);
         }
 
-        public IEnumerator SendParamsToClients()
+        public void SendParamsToClients()
         {
             if (!MatchmakerAcceptPatches.IsServer)
-                yield break;
+                //yield break;
+                return;
 
-            yield return new WaitForSeconds(AirdropParameters.TimeToStart);
+            //yield return new WaitForSeconds(AirdropParameters.TimeToStart);
 
             Logger.LogDebug("Sending Airdrop Params");
-            var packet = new Dictionary<string, object>();
-            packet.Add("serverId", CoopGameComponent.GetServerId());
-            packet.Add("m", "AirdropPacket");
-            packet.Add("model", AirdropParameters);
-            AkiBackendCommunication.Instance.SendDataToPool(packet.SITToJson());
+            AirdropPacket airdropPacket = new()
+            {
+                Config = AirdropParameters.Config,
+                AirdropAvailable = AirdropParameters.AirdropAvailable,
+                PlaneSpawned = AirdropParameters.PlaneSpawned,
+                BoxSpawned = AirdropParameters.BoxSpawned,
+                DistanceTraveled = AirdropParameters.DistanceTraveled,
+                DistanceToTravel = AirdropParameters.DistanceToTravel,
+                DistanceToDrop = AirdropParameters.DistanceToDrop,
+                Timer = AirdropParameters.Timer,
+                DropHeight = AirdropParameters.DropHeight,
+                TimeToStart = AirdropParameters.TimeToStart,
+                BoxPoint = AirdropParameters.RandomAirdropPoint,
+                SpawnPoint = airdropPlane.newPosition,
+                LookPoint = airdropPlane.newRotation
+            };
+            var player = Singleton<GameWorld>.Instance.MainPlayer as CoopPlayer;
+            player.Writer.Reset();
+            player.Server.SendDataToAll(player.Writer, ref airdropPacket, LiteNetLib.DeliveryMethod.ReliableUnordered);
 
-            yield break;
+            //yield break;
         }
 
         public async void FixedUpdate()
@@ -135,12 +145,15 @@ namespace Aki.Custom.Airdrops
             {
                 ClientLootBuilt = true;
                 Logger.LogInfo("Client::Building Plane, Box, Factory and Loot.");
+                EFT.UI.ConsoleScreen.Log("Starting Airdrop on client.");
 
                 airdropPlane = await AirdropPlane.Init(
-                    AirdropParameters.RandomAirdropPoint,
+                    AirdropParameters.SpawnPoint,
                     AirdropParameters.DropHeight,
                     AirdropParameters.Config.PlaneVolume,
-                    AirdropParameters.Config.PlaneSpeed);
+                    AirdropParameters.Config.PlaneSpeed,
+                    true,
+                    AirdropParameters.LookPoint);
                 AirdropBox = await AirdropBox.Init(AirdropParameters.Config.CrateFallSpeed);
                 factory = new ItemFactoryUtil();
 
@@ -160,6 +173,7 @@ namespace Aki.Custom.Airdrops
 
                 if (AirdropParameters.Timer >= AirdropParameters.TimeToStart && !AirdropParameters.PlaneSpawned)
                 {
+                    SendParamsToClients();
                     StartPlane();
                 }
 
@@ -217,7 +231,7 @@ namespace Aki.Custom.Airdrops
         public bool ClientPlaneSpawned { get; private set; }
         public AirdropLootResultModel ClientAirdropLootResultModel { get; private set; }
         public AirdropConfigModel ClientAirdropConfigModel { get; private set; }
-        public bool ClientLootBuilt { get; private set; }
+        public bool ClientLootBuilt { get; private set; } = false;
 
         private void BuildLootContainer(AirdropConfigModel config)
         {
@@ -229,17 +243,12 @@ namespace Aki.Custom.Airdrops
             // Get the lootData. Sent to Clients.
             if (MatchmakerAcceptPatches.IsServer)
             {
-                var packet = new Dictionary<string, object>();
-                packet.Add("serverId", CoopGameComponent.GetServerId());
-                packet.Add("m", "AirdropLootPacket");
-                packet.Add("config", config);
-                packet.Add("result", lootData);
-                AkiBackendCommunication.Instance.SendDataToPool(packet.SITToJson());
+                StartCoroutine(SendLootToClients(lootData, config));
             }
 
             if (lootData == null)
                 throw new System.Exception("Airdrops. Tried to BuildLootContainer without any Loot.");
-            
+
             factory.BuildContainer(AirdropBox.Container, config, lootData.DropType);
             factory.AddLoot(AirdropBox.Container, lootData);
             ClientLootBuilt = true;
@@ -256,6 +265,23 @@ namespace Aki.Custom.Airdrops
             AirdropParameters.DistanceToDrop = Vector3.Distance(
                 new Vector3(AirdropParameters.RandomAirdropPoint.x, AirdropParameters.DropHeight, AirdropParameters.RandomAirdropPoint.z),
                 airdropPlane.transform.position);
+        }
+
+        private IEnumerator SendLootToClients(AirdropLootResultModel lootData, AirdropConfigModel config)
+        {
+            yield return new WaitForSeconds(45);
+
+            Logger.LogInfo("Sending Airdrop Loot to clients.");
+            AirdropLootPacket lootPacket = new()
+            {
+                Loot = lootData,
+                Config = config
+            };
+            var player = Singleton<GameWorld>.Instance.MainPlayer as CoopPlayer;
+            player.Writer.Reset();
+            player.Server.SendDataToAll(player.Writer, ref lootPacket, LiteNetLib.DeliveryMethod.ReliableUnordered);
+
+            yield break;
         }
     }
 }

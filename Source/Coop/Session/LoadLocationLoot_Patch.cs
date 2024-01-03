@@ -1,17 +1,9 @@
-﻿using Aki.Custom.Airdrops.Models;
-using EFT;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
 using StayInTarkov.Coop.Matchmaker;
 using StayInTarkov.Networking;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
-using UnityEngine.Networking.Match;
-using UnityEngine.Profiling;
 
 namespace StayInTarkov.Coop.Session
 {

@@ -77,7 +77,9 @@ namespace StayInTarkov.Coop.LocalGame
             {
                 Logger.LogError("GameWorld is NULL");
                 return;
-            }
+            }            
+
+            Logger.LogInfo("We are starting a CoopGame!!!");
 
             /*
             if (!MatchmakerAcceptPatches.IsClient)

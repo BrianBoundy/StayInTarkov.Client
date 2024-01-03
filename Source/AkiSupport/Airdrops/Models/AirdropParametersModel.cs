@@ -1,6 +1,6 @@
 ﻿using Aki.Custom.Airdrops.Models;
 using Newtonsoft.Json;
-using System.Numerics;
+using UnityEngine;
 
 namespace StayInTarkov.AkiSupport.Airdrops.Models
 {
@@ -12,7 +12,6 @@ namespace StayInTarkov.AkiSupport.Airdrops.Models
     public class AirdropParametersModel
     {
         public AirdropConfigModel Config { get; set; }
-
         public bool AirdropAvailable { get; set; }
         public bool PlaneSpawned { get; set; }
         public bool BoxSpawned { get; set; }
@@ -22,12 +21,15 @@ namespace StayInTarkov.AkiSupport.Airdrops.Models
         public float Timer { get; set; }
         public int DropHeight { get; set; }
         public int TimeToStart { get; set; }
+        public Vector3 StartPosition { get; set; }
+        public Vector3 SpawnPoint { get; set; }
+        public Vector3 LookPoint { get; set; }
 
         [JsonIgnore]
-        public UnityEngine.Vector3 RandomAirdropPoint { get; set; } = UnityEngine.Vector3.zero;
+        public Vector3 RandomAirdropPoint { get; set; } = Vector3.zero;
 
-        public float RandomAirdropPointX { get { return RandomAirdropPoint.x; } set { RandomAirdropPoint = new UnityEngine.Vector3(value, RandomAirdropPoint.y, RandomAirdropPoint.z); } }
-        public float RandomAirdropPointY { get { return RandomAirdropPoint.y; } set { RandomAirdropPoint = new UnityEngine.Vector3(RandomAirdropPoint.x, value, RandomAirdropPoint.z); } }
-        public float RandomAirdropPointZ { get { return RandomAirdropPoint.z; } set { RandomAirdropPoint = new UnityEngine.Vector3(RandomAirdropPoint.x, RandomAirdropPoint.y, value); } }
+        public float RandomAirdropPointX { get { return RandomAirdropPoint.x; } set { RandomAirdropPoint = new Vector3(value, RandomAirdropPoint.y, RandomAirdropPoint.z); } }
+        public float RandomAirdropPointY { get { return RandomAirdropPoint.y; } set { RandomAirdropPoint = new Vector3(RandomAirdropPoint.x, value, RandomAirdropPoint.z); } }
+        public float RandomAirdropPointZ { get { return RandomAirdropPoint.z; } set { RandomAirdropPoint = new Vector3(RandomAirdropPoint.x, RandomAirdropPoint.y, value); } }
     }
 }

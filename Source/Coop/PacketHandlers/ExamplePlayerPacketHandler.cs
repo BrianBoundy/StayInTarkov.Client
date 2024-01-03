@@ -1,4 +1,5 @@
 ﻿using StayInTarkov.Coop.Components;
+using StayInTarkov.Coop.Players;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 

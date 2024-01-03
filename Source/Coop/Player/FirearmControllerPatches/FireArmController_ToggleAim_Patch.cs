@@ -1,4 +1,6 @@
-﻿using StayInTarkov.Coop.Web;
+﻿using StayInTarkov.Coop.Matchmaker;
+using StayInTarkov.Coop.Players;
+using StayInTarkov.Coop.Web;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -9,65 +11,31 @@ namespace StayInTarkov.Coop.Player.UsableItemControllerPatches
     {
         public override Type InstanceType => typeof(EFT.Player.FirearmController);
         public override string MethodName => "ToggleAim";
-        public static List<string> CallLocally = new();
-
-        [PatchPrefix]
-        public static bool PrePatch(EFT.Player.FirearmController __instance, EFT.Player ____player)
-        {
-            var player = ____player;
-            if (player == null)
-            {
-                return false;
-            }
-
-            var result = false;
-            if (CallLocally.Contains(player.ProfileId))
-                result = true;
-
-            return result;
-        }
 
         [PatchPostfix]
         public static void Postfix(EFT.Player.FirearmController __instance, EFT.Player ____player)
         {
-            var player = ____player;
-            if (player == null)
-                return;
-
-            if (CallLocally.Contains(player.ProfileId))
+            var botPlayer = ____player as CoopBot;
+            if (botPlayer != null)
             {
-                CallLocally.Remove(player.ProfileId);
+                botPlayer.WeaponPacket.ToggleAim = true;
+                botPlayer.WeaponPacket.AimingIndex = (__instance.IsAiming) ? __instance.Item.AimIndex.Value : -1;
+                botPlayer.WeaponPacket.ToggleSend();
                 return;
             }
 
-            Dictionary<string, object> dictionary = new()
-            {
-                { "m", "ToggleAim" }
-            };
+            var player = ____player as CoopPlayer;
+            if (player == null || !player.IsYourPlayer)
+                return;
 
-            AkiBackendCommunicationCoop.PostLocalPlayerData(player, dictionary);
+            player.WeaponPacket.ToggleAim = true;
+            player.WeaponPacket.AimingIndex = (__instance.IsAiming) ? __instance.Item.AimIndex.Value : -1;
+            player.WeaponPacket.ToggleSend();
         }
 
         public override void Replicated(EFT.Player player, Dictionary<string, object> dict)
         {
-            if (HasProcessed(GetType(), player, dict))
-                return;
 
-            if (CallLocally.Contains(player.ProfileId))
-                return;
-
-            try
-            {
-                if (player.HandsController is EFT.Player.FirearmController firearmCont)
-                {
-                    CallLocally.Add(player.ProfileId);
-                    firearmCont.ToggleAim();
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogInfo(ex);
-            }
         }
 
         protected override MethodBase GetTargetMethod()

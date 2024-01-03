@@ -1,6 +1,7 @@
 ﻿using EFT;
 using EFT.InventoryLogic;
 using StayInTarkov.Coop.NetworkPacket;
+using StayInTarkov.Coop.Players;
 using StayInTarkov.Networking;
 using System;
 using System.Collections.Generic;
@@ -23,26 +24,55 @@ namespace StayInTarkov.Coop.Player.Proceed
             return ReflectionHelpers.GetMethodForType(InstanceType, MethodName);
         }
 
-        [PatchPrefix]
-        public static bool PrePatch(EFT.Player __instance)
-        {
-            // Giving 'false' to AI and player can cause some major issue!
-            // return CallLocally.Contains(__instance.ProfileId) || IsHighPingOrAI(__instance);
+        //[PatchPrefix]
+        //public static bool PrePatch(EFT.Player __instance)
+        //{
+        //    // Giving 'false' to AI and player can cause some major issue!
+        //    // return CallLocally.Contains(__instance.ProfileId) || IsHighPingOrAI(__instance);
 
-            return true;
-        }
+        //    return true;
+        //}
 
         [PatchPostfix]
         public static void PostPatch(EFT.Player __instance, Item item, bool scheduled)
         {
-            if (CallLocally.Contains(__instance.ProfileId))
+            var botPlayer = __instance as CoopBot;
+            if (botPlayer != null)
             {
-                CallLocally.Remove(__instance.ProfileId);
+                botPlayer.CommonPlayerPacket.HasProceedPacket = true;
+                botPlayer.CommonPlayerPacket.ProceedPacket = new()
+                {
+                    ProceedType = SITSerialization.EProceedType.TryProceed,
+                    ItemId = item.Id,
+                    ItemTemplateId = item.TemplateId,
+                    Scheduled = scheduled
+                };
+                botPlayer.CommonPlayerPacket.ToggleSend();
                 return;
             }
 
-            PlayerProceedPacket playerProceedPacket = new(__instance.ProfileId, item.Id, item.TemplateId, scheduled, "TryProceed");
-            AkiBackendCommunication.Instance.SendDataToPool(playerProceedPacket.Serialize());
+            var player = __instance as CoopPlayer;
+            if (player == null || !player.IsYourPlayer)
+                return;
+
+            player.CommonPlayerPacket.HasProceedPacket = true;
+            player.CommonPlayerPacket.ProceedPacket = new()
+            {
+                ProceedType = SITSerialization.EProceedType.TryProceed,
+                ItemId = item.Id,
+                ItemTemplateId = item.TemplateId,
+                Scheduled = scheduled
+            };
+            player.CommonPlayerPacket.ToggleSend();
+
+            //if (CallLocally.Contains(__instance.ProfileId))
+            //{
+            //    CallLocally.Remove(__instance.ProfileId);
+            //    return;
+            //}
+
+            //PlayerProceedPacket playerProceedPacket = new(__instance.ProfileId, item.Id, item.TemplateId, scheduled, "TryProceed");
+            //AkiBackendCommunication.Instance.SendDataToPool(playerProceedPacket.Serialize());
         }
 
         public override void Replicated(EFT.Player player, Dictionary<string, object> dict)
@@ -56,15 +86,18 @@ namespace StayInTarkov.Coop.Player.Proceed
             if (HasProcessed(GetType(), player, playerProceedPacket))
                 return;
 
-            // Prevent compass switch code running twice.
-            if (player.IsYourPlayer && playerProceedPacket.TemplateId == "5f4f9eb969cdc30ff33f09db") // EYE MK.2 professional hand-held compass
-                return;
-
             Stopwatch stopwatch = Stopwatch.StartNew();
 
             if (ItemFinder.TryFindItem(playerProceedPacket.ItemId, out Item item))
             {
                 CallLocally.Add(player.ProfileId);
+
+                EFT.Player.ItemHandsController itemHandsController;
+                if ((itemHandsController = player.HandsController as EFT.Player.ItemHandsController) != null && item.TemplateId == "5f4f9eb969cdc30ff33f09db") // Compass Template Id
+                {
+                    itemHandsController.ToggleCompassState();
+                    //return;
+                }
 
                 // Make sure Tagilla and Cultists are using correct callback.
                 if (player.IsAI && item.Attributes.Any(x => x.Name == "knifeDurab"))

@@ -1,25 +1,29 @@
-﻿using Aki.Custom.Airdrops;
-using Aki.Custom.Airdrops.Models;
-using BepInEx.Logging;
+﻿using BepInEx.Logging;
 using Comfort.Common;
 using EFT;
-using StayInTarkov.AkiSupport.Airdrops.Models;
+using EFT.MovingPlatforms;
+using EFT.UI.BattleTimer;
 using StayInTarkov.Coop.Matchmaker;
-using StayInTarkov.Coop.World;
+using StayInTarkov.Coop.Players;
 using StayInTarkov.Core.Player;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using UnityEngine;
+using Aki.Custom.Airdrops;
+using Aki.Custom.Airdrops.Models;
+using StayInTarkov.AkiSupport.Airdrops.Models;
+
 
 namespace StayInTarkov.Coop.Components
 {
     public class ActionPacketHandlerComponent : MonoBehaviour
     {
-        public readonly BlockingCollection<Dictionary<string, object>> ActionPackets = new(9999);
+        public BlockingCollection<Dictionary<string, object>> ActionPackets { get; } = new(9999);
         public BlockingCollection<Dictionary<string, object>> ActionPacketsMovement { get; private set; } = new(9999);
         public BlockingCollection<Dictionary<string, object>> ActionPacketsDamage { get; private set; } = new(9999);
         public ConcurrentDictionary<string, CoopPlayer> Players => CoopGameComponent.Players;
@@ -145,7 +149,7 @@ namespace StayInTarkov.Coop.Components
                         continue;
 
                     var coopPlayer = (CoopPlayer)playerKVP;
-                    coopPlayer.ReceiveDamageFromServer(packet);
+                    //coopPlayer.ReceiveDamageFromServer(packet);
                 }
                 if (stopwatchActionPacketsDamage.ElapsedMilliseconds > 1)
                 {
@@ -169,67 +173,66 @@ namespace StayInTarkov.Coop.Components
             }
 
             bool result = ProcessPlayerPacket(packet);
-            if (!result)
-                result = ProcessWorldPacket(ref packet);
+            //if (!result)
+            //    result = ProcessWorldPacket(ref packet);
 
             return result;
         }
 
-        bool ProcessWorldPacket(ref Dictionary<string, object> packet)
-        {
-            // this isn't a world packet. return true
-            if (packet.ContainsKey("profileId"))
-                return true;
+        //bool ProcessWorldPacket(ref Dictionary<string, object> packet)
+        //{
+        //    // this isn't a world packet. return true
+        //    if (packet.ContainsKey("profileId"))
+        //        return true;
 
-            // this isn't a world packet. return true
-            if (!packet.ContainsKey("m"))
-                return true;
+        //    // this isn't a world packet. return true
+        //    if (!packet.ContainsKey("m"))
+        //        return true;
 
-            var result = false;
-            string method = packet["m"].ToString();
+        //    var result = false;
+        //    string method = packet["m"].ToString();
 
-            foreach (var coopPatch in CoopPatches.NoMRPPatches)
-            {
-                if (coopPatch is IModuleReplicationWorldPatch imrwp)
-                {
-                    if (imrwp.MethodName == method)
-                    {
-                        imrwp.Replicated(ref packet);
-                        result = true;
-                    }
-                }
-            }
+        //    foreach (var coopPatch in CoopPatches.NoMRPPatches)
+        //    {
+        //        if (coopPatch is IModuleReplicationWorldPatch imrwp)
+        //        {
+        //            if (imrwp.MethodName == method)
+        //            {
+        //                imrwp.Replicated(ref packet);
+        //                result = true;
+        //            }
+        //        }
+        //    }
 
-            switch (method)
-            {
-                case "AirdropPacket":
-                    ReplicateAirdrop(packet);
-                    result = true;
-                    break;
-                case "AirdropLootPacket":
-                    ReplicateAirdropLoot(packet);
-                    result = true;
-                    break;
-                case "RaidTimer":
-                    ReplicateRaidTimer(packet);
-                    result = true;
-                    break;
-                case "TimeAndWeather":
-                    ReplicateTimeAndWeather(packet);
-                    result = true;
-                    break;
-                case "LootableContainer_Interact":
-                    LootableContainer_Interact_Patch.Replicated(packet);
-                    result = true;
-                    break;
-            }
+        //    switch (method)
+        //    {
+        //        case "AirdropPacket":
+        //            ReplicateAirdrop(packet);
+        //            result = true;
+        //            break;
+        //        case "AirdropLootPacket":
+        //            ReplicateAirdropLoot(packet);
+        //            result = true;
+        //            break;
+        //        //case "RaidTimer":
+        //        //    ReplicateRaidTimer(packet);
+        //        //    result = true;
+        //        //    break;
+        //        //case "TimeAndWeather":
+        //        //    ReplicateTimeAndWeather(packet);
+        //        //    result = true;
+        //        //    break;
+        //        case "LootableContainer_Interact":
+        //            LootableContainer_Interact_Patch.Replicated(packet);
+        //            result = true;
+        //            break;
+        //    }
 
-            return result;
-        }
+        //    return result;
+        //}
 
         bool ProcessPlayerPacket(Dictionary<string, object> packet)
         {
-
             if (packet == null)
                 return true;
 
@@ -254,13 +257,13 @@ namespace StayInTarkov.Coop.Components
                 return false;
 
             var plyr = Players[profileId];
-            if(plyr == null)
+            if (plyr == null)
                 return false;
 
             var prc = plyr.GetComponent<PlayerReplicatedComponent>();
             if (prc == null)
                 return false;
-                
+
             prc.ProcessPacket(packet);
             return true;
         }
@@ -349,8 +352,15 @@ namespace StayInTarkov.Coop.Components
                         Logger.LogInfo($"RaidTimer: New SessionTime {timeRemain.TraderFormat()}");
                         gameTimer.ChangeSessionTime(timeRemain);
 
-                        // FIXME: Giving SetTime() with empty exfil point arrays has a known bug that may cause client game crashes!
-                        coopGame.GameUi.TimerPanel.SetTime(gameTimer.StartDateTime.Value, coopGame.Profile_0.Info.Side, gameTimer.SessionSeconds(), new EFT.Interactive.ExfiltrationPoint[] { });
+                        MainTimerPanel mainTimerPanel = ReflectionHelpers.GetFieldOrPropertyFromInstance<MainTimerPanel>(coopGame.GameUi.TimerPanel, "_mainTimerPanel", false);
+                        if (mainTimerPanel != null)
+                        {
+                            FieldInfo extractionDateTimeField = ReflectionHelpers.GetFieldFromType(typeof(TimerPanel), "dateTime_0");
+                            extractionDateTimeField.SetValue(mainTimerPanel, gameTimer.StartDateTime.Value.AddSeconds(timeRemain.TotalSeconds));
+
+                            MethodInfo UpdateTimerMI = ReflectionHelpers.GetMethodForType(typeof(MainTimerPanel), "UpdateTimer");
+                            UpdateTimerMI.Invoke(mainTimerPanel, new object[] { });
+                        }
                     }
                 }
             }
@@ -450,6 +460,39 @@ namespace StayInTarkov.Coop.Components
                 else
                 {
                     Logger.LogError("TimeAndWeather: WeatherController is null!");
+                }
+            }
+        }
+
+        void ReplicateArmoredTrainTime(Dictionary<string, object> packet)
+        {
+            CoopGameComponent coopGameComponent = CoopGameComponent.GetCoopGameComponent();
+            if (coopGameComponent == null)
+                return;
+
+            if (MatchmakerAcceptPatches.IsClient)
+            {
+                DateTime utcTime = new(long.Parse(packet["utcTime"].ToString()));
+
+                if (coopGameComponent.LocalGameInstance is CoopGame coopGame)
+                {
+                    Timer1 gameTimer = coopGame.GameTimer;
+
+                    // Process only after raid began.
+                    if (gameTimer.StartDateTime.HasValue && gameTimer.SessionTime.HasValue)
+                    {
+                        // Looking for Armored Train, if there is nothing, then we are not on the Reserve or Lighthouse.
+                        Locomotive locomotive = FindObjectOfType<Locomotive>();
+                        if (locomotive != null)
+                        {
+                            // The time won't change, if we already have replicated the time, don't override it again.
+                            FieldInfo departField = ReflectionHelpers.GetFieldFromType(typeof(MovingPlatform), "_depart");
+                            if (utcTime == (DateTime)departField.GetValue(locomotive))
+                                return;
+
+                            locomotive.Init(utcTime);
+                        }
+                    }
                 }
             }
         }

@@ -37,7 +37,7 @@ namespace StayInTarkov.Health
             var attacker = ReflectionHelpers.GetFieldOrPropertyFromInstance<Player>(victim, "LastAggressor", false);
 
             if (DisplayDeathMessage)
-                DisplayMessageNotifications.DisplayMessageNotification(attacker != null ? $"\"{GeneratePlayerNameWithSide(attacker)}\" killed \"{GeneratePlayerNameWithSide(victim)}\"" : $"\"{GeneratePlayerNameWithSide(victim)}\" has died because of \"{("DamageType_" + damageType.ToString()).Localized()}\"");
+                NotificationManagerClass.DisplayMessageNotification(attacker != null ? $"\"{GeneratePlayerNameWithSide(attacker)}\" killed \"{GeneratePlayerNameWithSide(victim)}\"" : $"\"{GeneratePlayerNameWithSide(victim)}\" has died because of \"{("DamageType_" + damageType.ToString()).Localized()}\"");
 
             Dictionary<string, object> packet = new()
             {

@@ -1,7 +1,7 @@
 ﻿using BepInEx.Logging;
 using Comfort.Common;
 using EFT;
-using StayInTarkov.Coop;
+using StayInTarkov.Coop.Players;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.AI;

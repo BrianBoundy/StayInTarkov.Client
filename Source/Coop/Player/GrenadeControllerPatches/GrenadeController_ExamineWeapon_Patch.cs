@@ -1,4 +1,5 @@
 ﻿using StayInTarkov.Coop.NetworkPacket;
+using StayInTarkov.Coop.Players;
 using StayInTarkov.Networking;
 using System;
 using System.Collections.Generic;
@@ -19,22 +20,45 @@ namespace StayInTarkov.Coop.Player.GrenadeControllerPatches
             return ReflectionHelpers.GetMethodForType(InstanceType, "ExamineWeapon");
         }
 
-        [PatchPrefix]
-        public static bool PrePatch(object __instance, EFT.Player ____player)
-        {
-            return CallLocally.Contains(____player.ProfileId);
-        }
+        //[PatchPrefix]
+        //public static bool PrePatch(object __instance, EFT.Player ____player)
+        //{
+        //    return CallLocally.Contains(____player.ProfileId);
+        //}
 
         [PatchPostfix]
         public static void PostPatch(object __instance, EFT.Player ____player)
         {
-            if (CallLocally.Contains(____player.ProfileId))
+            var botPlayer = ____player as CoopBot;
+            if (botPlayer != null)
             {
-                CallLocally.Remove(____player.ProfileId);
+                botPlayer.WeaponPacket.HasGrenadePacket = true;
+                botPlayer.WeaponPacket.GrenadePacket = new()
+                {
+                    PacketType = SITSerialization.GrenadePacket.GrenadePacketType.ExamineWeapon
+                };
+                botPlayer.WeaponPacket.ToggleSend();
                 return;
             }
 
-            AkiBackendCommunication.Instance.SendDataToPool(new BasePlayerPacket(____player.ProfileId, "GrenadeController_ExamineWeapon").Serialize());
+            var player = ____player as CoopPlayer;
+            if (player == null || !player.IsYourPlayer)
+                return;
+
+            player.WeaponPacket.HasGrenadePacket = true;
+            player.WeaponPacket.GrenadePacket = new()
+            {
+                PacketType = SITSerialization.GrenadePacket.GrenadePacketType.ExamineWeapon
+            };
+            player.WeaponPacket.ToggleSend();
+
+            //if (CallLocally.Contains(____player.ProfileId))
+            //{
+            //    CallLocally.Remove(____player.ProfileId);
+            //    return;
+            //}
+
+            //AkiBackendCommunication.Instance.SendDataToPool(new BasePlayerPacket(____player.ProfileId, "GrenadeController_ExamineWeapon").Serialize());
         }
 
         public override void Replicated(EFT.Player player, Dictionary<string, object> dict)

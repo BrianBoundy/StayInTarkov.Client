@@ -27,11 +27,7 @@ namespace StayInTarkov.Health
         }
 
         [PatchPostfix]
-        public static void PatchPostfix(
-            object __instance
-            , EBodyPart bodyPart
-            , float value
-            , object damageInfo)
+        public static void PatchPostfix(object __instance, EBodyPart bodyPart, float value, object damageInfo)
         {
             if (__instance == HealthListener.Instance.MyHealthController)
             {

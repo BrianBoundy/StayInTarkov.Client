@@ -258,7 +258,7 @@ namespace StayInTarkov
             Logger.LogInfo($"PatchConstants: {EftTypes.Length} EftTypes found");
 
             FilesCheckerTypes = typeof(ICheckResult).Assembly.GetTypes();
-            DisplayMessageNotifications.MessageNotificationType = EftTypes.Single(x => x.GetMethods(BindingFlags.Static | BindingFlags.Public).Select(y => y.Name).Contains("DisplayMessageNotification"));
+            //DisplayMessageNotifications.MessageNotificationType = EftTypes.Single(x => x.GetMethods(BindingFlags.Static | BindingFlags.Public).Select(y => y.Name).Contains("DisplayMessageNotification"));
 
             JsonConverterType = typeof(AbstractGame).Assembly.GetTypes()
                .First(t => t.GetField("Converters", BindingFlags.Static | BindingFlags.Public) != null);

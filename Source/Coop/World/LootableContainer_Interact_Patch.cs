@@ -1,11 +1,13 @@
-﻿using EFT;
+﻿using Comfort.Common;
+using EFT;
 using EFT.Interactive;
-using StayInTarkov.Networking;
+using StayInTarkov.Coop.Players;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using static RootMotion.FinalIK.InteractionTrigger.Range;
 
 namespace StayInTarkov.Coop.World
 {
@@ -35,25 +37,31 @@ namespace StayInTarkov.Coop.World
             return true;
         }
 
-        [PatchPrefix]
-        public static bool Prefix(LootableContainer __instance)
-        {
-            return false;
-        }
+        //[PatchPrefix]
+        //public static bool Prefix(LootableContainer __instance)
+        //{
+        //    return false;
+        //}
 
         [PatchPostfix]
         public static void Postfix(LootableContainer __instance, InteractionResult interactionResult)
         {
-            Dictionary<string, object> packet = new()
-            {
-                { "t", DateTime.Now.Ticks.ToString("G") },
-                { "serverId", CoopGameComponent.GetServerId() },
-                { "m", MethodName },
-                { "lootableContainerId", __instance.Id },
-                { "type", interactionResult.InteractionType.ToString() }
-            };
+            if (__instance.Id == null)
+                return;
 
-            AkiBackendCommunication.Instance.PostDownWebSocketImmediately(packet);
+            var player = Singleton<GameWorld>.Instance.MainPlayer as CoopPlayer;
+            if (player == null)
+                return;
+
+            player.CommonPlayerPacket.HasContainerInteractionPacket = true;
+            player.CommonPlayerPacket.ContainerInteractionPacket = new()
+            {
+                InteractiveId = __instance.Id,
+                InteractionType = interactionResult.InteractionType
+            };
+            player.CommonPlayerPacket.ToggleSend();
+
+            EFT.UI.ConsoleScreen.Log($"Sending ContainerInteractionPacket on {__instance.Id}");
         }
 
         public static void Replicated(Dictionary<string, object> packet)

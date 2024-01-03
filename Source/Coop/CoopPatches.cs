@@ -84,7 +84,7 @@ namespace StayInTarkov.Coop
             {
                 NoMRPPatches.Add(new Player_Init_Coop_Patch(m_Config));
                 NoMRPPatches.Add(new WeaponSoundPlayer_FireSonicSound_Patch());
-                NoMRPPatches.Add(new ItemControllerHandler_Move_Patch());
+                //NoMRPPatches.Add(new ItemControllerHandler_Move_Patch());
                 NoMRPPatches.Add(new LootableContainer_Interact_Patch());
             }
 
@@ -149,11 +149,6 @@ namespace StayInTarkov.Coop
                         GameObject.Destroy(prc);
                     }
                 }
-
-                //foreach (var pl in GameObject.FindObjectsOfType<CoopPlayer>())
-                //{
-                //    GameObject.DestroyImmediate(pl);
-                //}
 
                 coopGameComponent.RunAsyncTasks = false;
                 GameObject.DestroyImmediate(coopGameComponent);

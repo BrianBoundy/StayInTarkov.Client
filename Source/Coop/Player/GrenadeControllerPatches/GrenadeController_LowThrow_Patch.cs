@@ -1,4 +1,5 @@
 ﻿using StayInTarkov.Coop.NetworkPacket;
+using StayInTarkov.Coop.Players;
 using StayInTarkov.Core.Player;
 using StayInTarkov.Networking;
 using System;
@@ -21,22 +22,44 @@ namespace StayInTarkov.Coop.Player.GrenadeControllerPatches
 
         public static List<string> CallLocally = new();
 
-        [PatchPrefix]
-        public static bool PrePatch(object __instance, EFT.Player ____player)
-        {
-            return CallLocally.Contains(____player.ProfileId);
-        }
+        //[PatchPrefix]
+        //public static bool PrePatch(object __instance, EFT.Player ____player)
+        //{
+        //    return CallLocally.Contains(____player.ProfileId);
+        //}
 
         [PatchPostfix]
         public static void PostPatch(object __instance, EFT.Player ____player)
         {
-            if (CallLocally.Contains(____player.ProfileId))
+            var botPlayer = ____player as CoopBot;
+            if (botPlayer != null)
             {
-                CallLocally.Remove(____player.ProfileId);
+                botPlayer.WeaponPacket.HasGrenadePacket = true;
+                botPlayer.WeaponPacket.GrenadePacket = new()
+                {
+                    PacketType = SITSerialization.GrenadePacket.GrenadePacketType.LowThrow
+                };
+                botPlayer.WeaponPacket.ToggleSend();
                 return;
             }
 
-            AkiBackendCommunication.Instance.SendDataToPool(new GrenadeThrowPacket(____player.ProfileId, ____player.Rotation, "LowThrow").Serialize());
+            var player = ____player as CoopPlayer;
+            if (player == null || !player.IsYourPlayer)
+                return;
+
+            player.WeaponPacket.HasGrenadePacket = true;
+            player.WeaponPacket.GrenadePacket = new()
+            {
+                PacketType = SITSerialization.GrenadePacket.GrenadePacketType.LowThrow
+            };
+            player.WeaponPacket.ToggleSend();
+            //if (CallLocally.Contains(____player.ProfileId))
+            //{
+            //    CallLocally.Remove(____player.ProfileId);
+            //    return;
+            //}
+
+            //AkiBackendCommunication.Instance.SendDataToPool(new GrenadeThrowPacket(____player.ProfileId, ____player.Rotation, "LowThrow").Serialize());
         }
 
         public override void Replicated(EFT.Player player, Dictionary<string, object> dict)

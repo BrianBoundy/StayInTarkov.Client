@@ -41,7 +41,7 @@ namespace StayInTarkov
     /// Written by: Paulov
     /// Used template by BepInEx
     /// </summary>
-    [BepInPlugin("com.sit.core", "SIT.Core", "1.9.0")]
+    [BepInPlugin("com.sit.core", "SIT.Core", "2.0.0")]
     [BepInProcess("EscapeFromTarkov.exe")]
     public class StayInTarkovPlugin : BaseUnityPlugin
     {
@@ -437,7 +437,7 @@ namespace StayInTarkov
             }
             string errorMessage = stringBuilder.ToString();
 
-            DisplayMessageNotifications.DisplayMessageNotification($"{errorMessage}", ENotificationDurationType.Infinite, ENotificationIconType.Alert, UnityEngine.Color.red);
+            NotificationManagerClass.DisplayMessageNotification($"{errorMessage}", ENotificationDurationType.Infinite, ENotificationIconType.Alert, UnityEngine.Color.red);
 
             // Show an error in the BepInEx console/log file
             Logger.LogError(errorMessage);
