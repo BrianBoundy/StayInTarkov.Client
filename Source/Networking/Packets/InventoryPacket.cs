@@ -11,7 +11,7 @@ namespace StayInTarkov.Networking.Packets
         public ItemControllerExecutePacket ItemControllerExecutePacket { get; set; }
         public bool HasItemMovementHandlerMovePacket { get; set; }
         public ItemMovementHandlerMovePacket ItemMovementHandlerMovePacket { get; set; }
-        public InventoryPacket(string profileId) 
+        public InventoryPacket(string profileId)
         {
             ProfileId = profileId;
             HasItemControllerExecutePacket = false;

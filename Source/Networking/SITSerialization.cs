@@ -13,6 +13,7 @@ using System.Xml;
 using UnityEngine;
 using UnityEngine.Profiling;
 using static Physical;
+using static RootMotion.FinalIK.InteractionTrigger.Range;
 
 // GClass2800
 
@@ -970,9 +971,9 @@ namespace StayInTarkov.Networking
 
             public static void Serialize(NetDataWriter writer, WorldInteractionPacket packet)
             {
+                writer.Put(packet.IsStart);
                 writer.Put(packet.InteractiveId);
                 writer.Put((int)packet.InteractionType);
-                writer.Put(packet.IsStart);
                 writer.Put(packet.HasKey);
                 if (packet.HasKey)
                 {
