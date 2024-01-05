@@ -298,7 +298,7 @@ namespace StayInTarkov.Networking
                 GClass1035 polyReader = new(inventoryBytes);
                 Inventory inventory = GClass1463.DeserializeInventory(Singleton<ItemFactory>.Instance, polyReader.ReadEFTInventoryDescriptor());
                 return inventory;
-            }   
+            }
         }
 
         public struct PlayerInfoPacket()
@@ -756,7 +756,7 @@ namespace StayInTarkov.Networking
 
             public static ObservedDeathPacket Deserialize(NetDataReader reader)
             {
-                return new ObservedDeathPacket() 
+                return new ObservedDeathPacket()
                 {
                     DamageType = (EDamageType)reader.GetInt(),
                     ProfileId = reader.GetString()
@@ -954,9 +954,9 @@ namespace StayInTarkov.Networking
             public static WorldInteractionPacket Deserialize(NetDataReader reader)
             {
                 WorldInteractionPacket packet = new();
+                packet.IsStart = reader.GetBool();
                 packet.InteractiveId = reader.GetString();
                 packet.InteractionType = (EInteractionType)reader.GetInt();
-                packet.IsStart = reader.GetBool();
                 packet.HasKey = reader.GetBool();
                 if (packet.HasKey)
                 {
