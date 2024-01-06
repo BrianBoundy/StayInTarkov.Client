@@ -69,16 +69,31 @@ namespace StayInTarkov.Networking
         {
             public static void SerializeGridItemAddressDescriptor(NetDataWriter writer, GridItemAddressDescriptor gridItemAddressDescriptor)
             {
-                SerializeLocationInGrid(writer, gridItemAddressDescriptor.LocationInGrid);
+                if (gridItemAddressDescriptor != null) { 
+                    SerializeLocationInGrid(writer, gridItemAddressDescriptor.LocationInGrid);
+                }
+                else //Write the value as -1 which is an invalid location so deserilize will skip
+                {
+                    writer.Put(-1);
+                }
             }
 
             public static GridItemAddressDescriptor DeserializeGridItemAddressDescriptor(NetDataReader reader)
             {
-                return new GridItemAddressDescriptor()
+                //Check for -1 as the first value, if so the GridItem doesn't exist
+                if (reader.GetInt() == -1)
                 {
-                    LocationInGrid = DeserializeLocationInGrid(reader),
-                    Container = DeserializeContainerDescriptor(reader)
-                };
+                    return null;
+                }
+                else {
+                    //Set the DataReader packet back one integer so GridItem can re-read it.
+                    reader.SetPosition(reader.Position - sizeof(int));
+                    return new GridItemAddressDescriptor()
+                    {
+                        LocationInGrid = DeserializeLocationInGrid(reader),
+                        Container = DeserializeContainerDescriptor(reader)
+                    };
+                }
             }
 
             public static void SerializeContainerDescriptor(NetDataWriter writer, ContainerDescriptor containerDescriptor)
